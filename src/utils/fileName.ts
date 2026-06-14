@@ -38,5 +38,5 @@ export function toSafeFilename(name: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
 
-  return result || 'sitecanvas-export';
+  return result || 'paletto-export';
 }

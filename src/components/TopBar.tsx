@@ -6,6 +6,7 @@ interface Props {
   onViewModeChange: (mode: ViewMode) => void;
   onSave: () => void;
   onLoad: () => void;
+  onImport: () => void;
   onExport: () => void;
   onReset: () => void;
   onUndo: () => void;
@@ -21,6 +22,7 @@ export function TopBar({
   onViewModeChange,
   onSave,
   onLoad,
+  onImport,
   onExport,
   onReset,
   onUndo,
@@ -34,10 +36,10 @@ export function TopBar({
       {/* Left: Brand + project name */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-violet-600 rounded-md flex items-center justify-center">
-            <span className="text-white text-xs font-bold">SC</span>
+          <div className="w-7 h-7 bg-gradient-to-br from-violet-500 to-purple-600 rounded-md flex items-center justify-center">
+            <span className="text-white text-xs font-bold">P</span>
           </div>
-          <span className="font-semibold text-slate-800 text-sm">SiteCanvas AI</span>
+          <span className="font-semibold text-slate-800 text-sm">Paletto</span>
         </div>
         <div className="h-4 w-px bg-slate-200" />
         <span className="text-slate-500 text-sm truncate max-w-[160px]">{projectName}</span>
@@ -118,6 +120,16 @@ export function TopBar({
         </button>
 
         <div className="h-4 w-px bg-slate-200" />
+
+        <button
+          onClick={onImport}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 border border-slate-300 hover:border-slate-400 hover:bg-slate-50 rounded-md transition-all"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Import
+        </button>
 
         <button
           onClick={onExport}

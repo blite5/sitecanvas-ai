@@ -8,8 +8,10 @@ import { Sidebar } from './components/Sidebar';
 import { Canvas } from './components/Canvas';
 import { PropertyPanel } from './components/PropertyPanel';
 import { ExportModal } from './components/ExportModal';
+import { ImportModal } from './components/ImportModal';
 
-const STORAGE_KEY = 'sitecanvas-ai-project';
+const STORAGE_KEY = 'paletto-project';
+const LEGACY_KEY = 'sitecanvas-ai-project';
 const MAX_HISTORY = 50;
 
 function createDefaultSite(): SiteData {
@@ -63,6 +65,7 @@ export default function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('desktop');
   const [showExport, setShowExport] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [hasSaved, setHasSaved] = useState(false);
@@ -72,7 +75,7 @@ export default function App() {
   const dragSnapshot = useRef<SiteElement[] | null>(null);
 
   useEffect(() => {
-    setHasSaved(Boolean(localStorage.getItem(STORAGE_KEY)));
+    setHasSaved(Boolean(localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_KEY)));
   }, []);
 
   const showToast = useCallback((msg: string) => {
@@ -251,7 +254,7 @@ export default function App() {
   }, [site, showToast]);
 
   const handleLoad = useCallback(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(LEGACY_KEY);
     if (!saved) return;
     try {
       const parsed: SiteData = JSON.parse(saved);
@@ -273,6 +276,17 @@ export default function App() {
     setSelectedId(null);
     showToast('초기화되었습니다');
   }, [showToast]);
+
+  const handleImport = useCallback(
+    (importedElements: SiteElement[], importedTitle: string) => {
+      setElementsWithHistory(site.elements, importedElements);
+      if (importedTitle) setSite((s) => ({ ...s, name: importedTitle }));
+      setSelectedId(null);
+      setShowImport(false);
+      showToast(`✨ ${importedElements.length}개 요소를 가져왔습니다`);
+    },
+    [site.elements, setElementsWithHistory, showToast]
+  );
 
   // ── Keyboard shortcuts ─────────────────────────────────────────────────────
   const handlersRef = useRef({
@@ -349,6 +363,7 @@ export default function App() {
         onViewModeChange={setViewMode}
         onSave={handleSave}
         onLoad={handleLoad}
+        onImport={() => setShowImport(true)}
         onExport={() => setShowExport(true)}
         onReset={handleReset}
         onUndo={handleUndo}
@@ -397,6 +412,13 @@ export default function App() {
           elements={site.elements}
           siteName={site.name}
           onClose={() => setShowExport(false)}
+        />
+      )}
+
+      {showImport && (
+        <ImportModal
+          onImport={handleImport}
+          onClose={() => setShowImport(false)}
         />
       )}
 
