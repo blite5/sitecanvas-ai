@@ -50,6 +50,12 @@ export interface PublishedSite {
   version: number;
 }
 
+export interface StorageAdapter {
+  publish(site: PublishedSite): Promise<void>;
+  get(siteId: string): Promise<PublishedSite | null>;
+  getAll(): Promise<Record<string, PublishedSite>>;
+}
+
 export type ViewMode = 'desktop' | 'mobile';
 
 export type TemplateKey = 'cafe' | 'portfolio' | 'club' | 'event' | 'startup';

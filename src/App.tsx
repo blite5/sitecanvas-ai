@@ -72,6 +72,7 @@ export default function App() {
   const [showImport, setShowImport] = useState(false);
   const [showPublish, setShowPublish] = useState(false);
   const [publishResult, setPublishResult] = useState<{ siteId: string; isUpdate: boolean } | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [hasSaved, setHasSaved] = useState(false);
@@ -295,28 +296,37 @@ export default function App() {
   );
 
   const handlePublish = useCallback(() => {
+    if (isPublishing) return;
+    setIsPublishing(true);
     (async () => {
-      const isUpdate = Boolean(site.publishedSiteId);
-      const siteId = site.publishedSiteId ?? generateSiteId(site.name);
-      const published: PublishedSite = {
-        id: siteId,
-        name: site.name,
-        elements: site.elements,
-        createdAt: site.createdAt,
-        updatedAt: new Date().toISOString(),
-        version: isUpdate ? ((await publishStorage.get(siteId))?.version ?? 0) + 1 : 1,
-      };
-      await publishStorage.publish(published);
-      // Auto-save publishedSiteId so it persists across sessions
-      const updatedSite = { ...site, publishedSiteId: siteId };
-      setSite(updatedSite);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSite));
-      setHasSaved(true);
-      setPublishResult({ siteId, isUpdate });
-      setShowPublish(true);
-      showToast(isUpdate ? '🌐 페이지가 업데이트되었습니다' : '🚀 Site Published!');
-    })().catch(console.error);
-  }, [site, showToast]);
+      try {
+        const isUpdate = Boolean(site.publishedSiteId);
+        const siteId = site.publishedSiteId ?? generateSiteId(site.name);
+        const prevVersion = isUpdate ? ((await publishStorage.get(siteId))?.version ?? 0) : 0;
+        const published: PublishedSite = {
+          id: siteId,
+          name: site.name,
+          elements: site.elements,
+          createdAt: site.createdAt,
+          updatedAt: new Date().toISOString(),
+          version: prevVersion + 1,
+        };
+        await publishStorage.publish(published);
+        const updatedSite = { ...site, publishedSiteId: siteId };
+        setSite(updatedSite);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSite));
+        setHasSaved(true);
+        setPublishResult({ siteId, isUpdate });
+        setShowPublish(true);
+        showToast(isUpdate ? '🌐 페이지가 업데이트되었습니다' : '🚀 Site Published!');
+      } catch (e) {
+        console.error('[Paletto] Publish failed:', e);
+        showToast('발행 중 문제가 발생했습니다');
+      } finally {
+        setIsPublishing(false);
+      }
+    })();
+  }, [site, showToast, isPublishing]);
 
   // ── Keyboard shortcuts ─────────────────────────────────────────────────────
   const handlersRef = useRef({
@@ -397,6 +407,7 @@ export default function App() {
         onExport={() => setShowExport(true)}
         onPublish={handlePublish}
         hasPublished={Boolean(site.publishedSiteId)}
+        isPublishing={isPublishing}
         onReset={handleReset}
         onUndo={handleUndo}
         onRedo={handleRedo}

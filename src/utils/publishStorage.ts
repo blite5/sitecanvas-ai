@@ -1,15 +1,11 @@
-import type { PublishedSite } from '../types';
+import type { PublishedSite, StorageAdapter } from '../types';
+import { isSupabaseEnabled } from '../lib/supabase';
+import { supabaseAdapter } from './supabasePublishStorage';
 
+// ── localStorage adapter (fallback when Supabase is not configured) ───────────
 const PUBLISHED_KEY = 'paletto_published';
 
 type Store = Record<string, PublishedSite>;
-
-// Storage adapter interface — swap `localAdapter` for a Supabase adapter in v0.8
-export interface StorageAdapter {
-  publish(site: PublishedSite): Promise<void>;
-  get(siteId: string): Promise<PublishedSite | null>;
-  getAll(): Promise<Store>;
-}
 
 function readStore(): Store {
   try {
@@ -34,5 +30,9 @@ export const localAdapter: StorageAdapter = {
   },
 };
 
-// To switch to Supabase: replace this export with a supabaseAdapter
-export const publishStorage: StorageAdapter = localAdapter;
+// ── Active adapter: Supabase if env vars are present, otherwise localStorage ──
+// To switch permanently to Supabase, set VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY
+// in .env (local) and in Vercel project settings (production).
+export const publishStorage: StorageAdapter = isSupabaseEnabled
+  ? supabaseAdapter
+  : localAdapter;
