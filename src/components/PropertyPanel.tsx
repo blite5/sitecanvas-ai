@@ -147,7 +147,6 @@ export function PropertyPanel({
 
   // Live update helpers (no history)
   const live = (patch: Partial<SiteElement>) => onUpdate({ ...element, ...patch });
-  const liveStyle = (patch: Partial<SiteElement['style']>) => live({ style: { ...element.style, ...patch } });
 
   // Commit helpers (pushes history)
   const commit = (patch: Partial<SiteElement>) => onCommit({ ...element, ...patch });
