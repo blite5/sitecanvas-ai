@@ -38,6 +38,16 @@ export interface SiteData {
   elements: SiteElement[];
   createdAt: string;
   updatedAt: string;
+  publishedSiteId?: string;
+}
+
+export interface PublishedSite {
+  id: string;
+  name: string;
+  elements: SiteElement[];
+  createdAt: string;
+  updatedAt: string;
+  version: number;
 }
 
 export type ViewMode = 'desktop' | 'mobile';

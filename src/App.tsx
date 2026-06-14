@@ -9,6 +9,10 @@ import { Canvas } from './components/Canvas';
 import { PropertyPanel } from './components/PropertyPanel';
 import { ExportModal } from './components/ExportModal';
 import { ImportModal } from './components/ImportModal';
+import { PublishModal } from './components/PublishModal';
+import { publishStorage } from './utils/publishStorage';
+import { generateSiteId } from './utils/slug';
+import type { PublishedSite } from './types';
 
 const STORAGE_KEY = 'paletto-project';
 const LEGACY_KEY = 'sitecanvas-ai-project';
@@ -66,6 +70,8 @@ export default function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('desktop');
   const [showExport, setShowExport] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [showPublish, setShowPublish] = useState(false);
+  const [publishResult, setPublishResult] = useState<{ siteId: string; isUpdate: boolean } | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [hasSaved, setHasSaved] = useState(false);
@@ -288,6 +294,30 @@ export default function App() {
     [site.elements, setElementsWithHistory, showToast]
   );
 
+  const handlePublish = useCallback(() => {
+    (async () => {
+      const isUpdate = Boolean(site.publishedSiteId);
+      const siteId = site.publishedSiteId ?? generateSiteId(site.name);
+      const published: PublishedSite = {
+        id: siteId,
+        name: site.name,
+        elements: site.elements,
+        createdAt: site.createdAt,
+        updatedAt: new Date().toISOString(),
+        version: isUpdate ? ((await publishStorage.get(siteId))?.version ?? 0) + 1 : 1,
+      };
+      await publishStorage.publish(published);
+      // Auto-save publishedSiteId so it persists across sessions
+      const updatedSite = { ...site, publishedSiteId: siteId };
+      setSite(updatedSite);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSite));
+      setHasSaved(true);
+      setPublishResult({ siteId, isUpdate });
+      setShowPublish(true);
+      showToast(isUpdate ? '🌐 페이지가 업데이트되었습니다' : '🚀 Site Published!');
+    })().catch(console.error);
+  }, [site, showToast]);
+
   // ── Keyboard shortcuts ─────────────────────────────────────────────────────
   const handlersRef = useRef({
     handleUndo,
@@ -365,6 +395,8 @@ export default function App() {
         onLoad={handleLoad}
         onImport={() => setShowImport(true)}
         onExport={() => setShowExport(true)}
+        onPublish={handlePublish}
+        hasPublished={Boolean(site.publishedSiteId)}
         onReset={handleReset}
         onUndo={handleUndo}
         onRedo={handleRedo}
@@ -419,6 +451,15 @@ export default function App() {
         <ImportModal
           onImport={handleImport}
           onClose={() => setShowImport(false)}
+        />
+      )}
+
+      {showPublish && publishResult && (
+        <PublishModal
+          siteId={publishResult.siteId}
+          siteName={site.name}
+          isUpdate={publishResult.isUpdate}
+          onClose={() => setShowPublish(false)}
         />
       )}
 
